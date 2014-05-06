@@ -1,35 +1,35 @@
 # Test the query language
 
-make = "make -j1 -C $RETHINKDB/test/rql_test BUILD_DIR=$RETHINKDB_BUILD_DIR "
+make = '"$RETHINKDB"/test/rql_test/test_runner run -b "$RETHINKDB_BUILD_DIR" '
 
 generate_test(
-    make + "js_connect TEST_DEFAULT_PORT=1",
+    make + "-l js -f connections/connection",
     name = "js-connect")
 
 generate_test(
-    make + "py_connect TEST_DEFUALT_PORT=1",
+    make + "-l py -f connections/connection",
     name = "py-connect")
 
 generate_test(
-    make + "js_cursor",
+    make + "-l js -f connections/cursor",
     name = "js-cursor")
 
 generate_test(
-    make + "js_promise",
+    make + "-l js -f connections/promise",
     name = "js-promise")
 
 generate_test(
-    make + "py_cursor",
+    make + "-l py -f connections/cursor",
     name = "py-cursor")
 
 generate_test(
-    make + "-B js_polyglot",
+    make + "-l js -f polyglot",
     name = "js-polyglot")
 
 generate_test(
-    make + "-B py_polyglot",
+    make + " -l py -f polyglot",
     name = "py-polyglot")
 
 generate_test(
-    make + "-B rb_polyglot",
+    make + " -l rb -f polyglot",
     name = "rb-polyglot")

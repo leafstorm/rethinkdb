@@ -112,11 +112,11 @@ Query: #{PP.pp(query, "")}\nBatch Conf: #{bc}
     end
 
     begin
-      assert_raise(RethinkDB::RqlDriverError) {
+      assert_raise(ArgumentError) {
         $dispatch_hook = lambda {|x| x.gsub('[', '{')}
         eq(r(1), 1)
       }
-      assert_raise(RethinkDB::RqlDriverError) {
+      assert_raise(ArgumentError) {
         $dispatch_hook = lambda {|x| x.gsub('1', '\u0000')}
         eq(r(1), 1)
       }
