@@ -60,8 +60,10 @@ class TestNoConnection(unittest.TestCase):
 
     def test_auth_key(self):
         # Test that everything still doesn't work even with an auth key
+        if not use_default_port:
+            self.skipTest("Not testing default port")
         self.assertRaisesRegexp(
-            RqlDriverError, 'Server dropped connection with message: "ERROR: Incorrect authorization key."',
+            RqlDriverError, 'Could not connect to 0.0.0.0:28015."',
             r.connect, host="0.0.0.0", port=28015, auth_key="hunter2")
 
 class TestConnectionDefaultPort(unittest.TestCase):
@@ -76,7 +78,6 @@ class TestConnectionDefaultPort(unittest.TestCase):
 
     def tearDown(self):
         if self.servers is not None:
-            self.servers.stop()
             self.servers.__exit__(None, None, None)
 
     def test_connect(self):
@@ -138,7 +139,6 @@ class TestAuthConnection(unittest.TestCase):
 
     def tearDown(self):
         if self.servers is not None:
-            self.servers.stop()
             self.servers.__exit__()
 
     def test_connect_no_auth(self):
@@ -187,7 +187,6 @@ class TestWithConnection(unittest.TestCase):
 
     def tearDown(self):
         if self.servers is not None:
-            self.servers.stop()
             self.servers.__exit__(None, None, None)
 
 class TestConnection(TestWithConnection):
@@ -424,5 +423,4 @@ if __name__ == '__main__':
 
     res = unittest.TextTestRunner(verbosity=2).run(suite)
     if not res.wasSuccessful():
-        print 'here - failing', __name__
         sys.exit(1)

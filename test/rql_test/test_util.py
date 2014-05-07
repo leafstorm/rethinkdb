@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-import atexit
+import atexit, shutil
 import random
 import socket
 import os
 import sys
 from time import sleep
-from subprocess import call, Popen, PIPE, STDOUT
+from subprocess import call, check_call, Popen, PIPE, STDOUT
 
 runningServers = []
 def shutdown_servers():
@@ -51,8 +51,8 @@ class RethinkDBTestServers(object):
 
     def stop(self):
         if self.servers is not None:
-            for i in xrange(1, len(self.servers) + 1):
-                self.servers[len(self.servers) - i].stop()
+            for server in reversed(self.servers):
+                server.stop()
         self.servers = None
         self.clear_data()
 
@@ -66,7 +66,7 @@ class RethinkDBTestServers(object):
         self.start()
 
     def driver_port(self):
-        return self.servers[0].cpp_port
+        return self.servers[0].driver_port
 
     def cluster_port(self):
         return self.servers[0].cluster_port
@@ -86,7 +86,7 @@ class RethinkDBTestServer(object):
     group_data_dir = None
     server_data_dir = None
     
-    cpp_port = None
+    driver_port = None
     cluster_port = None
     log_file = None
     rdbfile_path = None
@@ -126,14 +126,14 @@ class RethinkDBTestServer(object):
 
     def start(self):
         if self.use_default_port:
-            self.cpp_port = 28015
+            self.driver_port = 28015
         else:
-            self.cpp_port = self.find_available_port()
+            self.driver_port = self.find_available_port()
         self.cluster_port = self.find_available_port()
         self.create()
 
         self.cpp_server = Popen([self.executable, 'serve',
-                                 '--driver-port', str(self.cpp_port),
+                                 '--driver-port', str(self.driver_port),
                                  '--directory', self.rdbfile_path,
                                  '--http-port', '0',
                                  '--cache-size', str(self.cache_size),
@@ -146,32 +146,36 @@ class RethinkDBTestServer(object):
 
     # Join a cluster headed by a server previously invoked with start
     def join(self, cluster_port):
-        self.cpp_port = self.find_available_port()
+        self.driver_port = self.find_available_port()
         self.cluster_port = self.find_available_port()
         self.create()
         
         self.cpp_server = Popen([self.executable, 'serve',
-                                 '--driver-port', str(self.cpp_port),
+                                 '--driver-port', str(self.driver_port),
                                  '--cluster-port', str(self.cluster_port),
                                  '--directory', self.rdbfile_path,
                                  '--http-port', '0',
                                  '--join', 'localhost:%d' % cluster_port],
                                 stdout=self.log_file, stderr=self.log_file)
-        try:
-            runningServers.remove(self)
-        except: pass
+        runningServers.append(self)
         sleep(2)
 
     def create(self):
-        self.server_data_dir = os.path.join(self.group_data_dir, 'server_%s' % self.cpp_port)
+        self.server_data_dir = os.path.join(self.group_data_dir, 'server_%s' % self.driver_port)
         self.rdbfile_path = os.path.join(self.server_data_dir, 'rdb')
         
-        if not os.path.isdir(self.server_data_dir):
-            os.makedirs(self.server_data_dir)
+        if os.path.exists(self.server_data_dir): # we need a clean data directory TODO: evaluate moving this to a tempfile folder
+            # TODO: log that we are cleaning off this directory
+            if os.path.isdir(self.server_data_dir) and not os.path.islink(self.server_data_dir):    
+                shutil.rmtree(self.server_data_dir)
+            else:
+                os.unlink(self.server_data_dir)
+        os.makedirs(self.server_data_dir)
+        
         self.log_file = open(os.path.join(self.server_data_dir, 'server-log.txt'), 'a+')
         
         self.executable = os.path.join(self.server_build_dir or os.getenv('RETHINKDB_BUILD_DIR') or '../../build/debug', 'rethinkdb')
-        call([self.executable, 'create', '--directory', self.rdbfile_path], stdout=self.log_file, stderr=STDOUT)
+        check_call([self.executable, 'create', '--directory', self.rdbfile_path], stdout=self.log_file, stderr=STDOUT)
 
     def stop(self):
         logFilePath = self.log_file.name
