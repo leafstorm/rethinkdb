@@ -7,5 +7,9 @@ import utils
 if not os.path.isdir('run'):
     os.makedirs('run')
 
-os.environ['BUILD_DIR'] = os.getenv('BUILD_DIR') or utils.latest_build_dir()
+buildDir = os.getenv('BUILD_DIR') or utils.latest_build_dir()
+if len(sys.argv) > 1:
+    buildDir = sys.argv[1]
+os.environ['BUILD_DIR'] = buildDir
+
 sys.exit(subprocess.call(['_mocha', os.path.join(os.path.dirname(__file__), 'connection.js')]))

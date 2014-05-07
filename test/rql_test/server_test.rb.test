@@ -6,6 +6,11 @@ import utils
 sys.path.insert(0, os.path.dirname(__file__))
 import test_util
 
-servers = test_util.RethinkDBTestServers(num_servers=1, server_build_dir=utils.latest_build_dir())
+buildDir = os.getenv('BUILD_DIR') or utils.latest_build_dir()
+if len(sys.argv) > 1:
+    buildDir = sys.argv[1]
+os.environ['BUILD_DIR'] = buildDir
+
+servers = test_util.RethinkDBTestServers(num_servers=1, server_build_dir=buildDir)
 servers.start()
 sys.exit(subprocess.call(['ruby', os.path.join(os.path.dirname(__file__), 'server_test.rb'), str(servers.driver_port())]))
