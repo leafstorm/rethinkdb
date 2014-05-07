@@ -204,7 +204,7 @@ class TestGroup:
         except Exception, e:
             raise ValueError('buildYamlTest got a sourceFile (%s) that was unable to be parsed as Yaml: %s' % (sourceFile, str(e)))
         
-        with open(outputPath, 'w+') as outputFile:
+        with open(outputPath, 'w') as outputFile:
             
             # - write the shebang line
             
@@ -224,11 +224,9 @@ class TestGroup:
             
             # - add the body of the tests
             
-            testNumber = 1
-            for test in parsed_data['tests']:
+            for testNumber, test in enumerate(parsed_data['tests'], start=0):
                 myClass.write_test(testName, outputFile, test, language, str(testNumber), shard=shards)
-                testNumber += 1
-    
+            
             outputFile.write('\n\n')
             
             # - add the footer
@@ -475,6 +473,7 @@ def main():
     args = None
     create_servers = True
     servers = None
+    build_directory = None
     
     # -- comand specific option parsing
     
@@ -607,6 +606,7 @@ def main():
             sys.exit(1)
         
         servers = RethinkDBRunningServer(options.driver_port, options.cluster_port, options.executable_path)
+        build_directory = os.path.dirname(options.executable_path)
         # TODO: validate that this is actually a running server
     
     else:
@@ -649,7 +649,7 @@ def main():
     
     # -- run the testing
     
-    print('Using rethinkdb binay from %s' % utils.latest_build_dir())
+    print('Using rethinkdb binay from %s' % build_directory)
     startTime = time.time()
     
     failedTests = []
@@ -713,7 +713,7 @@ def main():
             errorOutput = ''
             if outputChannel is not None and os.path.getsize(outputChannel.name) > 0:
                 outputChannel.seek(0)
-                errorOutput = 'Output:\n' + outputChannel.read()
+                errorOutput = ' Output:\n' + outputChannel.read()
             sys.stderr.write("== Failed %s (%s) test with result code %s%s\n" % (test.name, test.language, str(exitCode), errorOutput))
         else:
             print("== Successfully Passed %s (%s) test" % (test.name, test.language))
