@@ -25,7 +25,7 @@ make -C ../..
 sudo npm install -g mocha
 ```
 
-### Basic Useage
+### Basic Usage
 
 `./test_runner` runs all the tests.
 
@@ -41,7 +41,7 @@ testing. Some of the tests (e.g.: the connection tests) will additionally launch
 
 The tests write out data to a `run` folder that is created in the current working directory.
 
-By default, the test suite uses the most recently build rethinkdb binary from ../../build/, but this can be changed by
+By default, the test suite uses the most recently built rethinkdb binary from ../../build/, but this can be changed by
 passing the `-b` or `--build-dir` argument.
 
 When the tests fail, they return a non-zero exit code. Testing will continue and the output (STDERR and STDOUT) of that

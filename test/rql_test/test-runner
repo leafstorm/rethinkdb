@@ -629,7 +629,7 @@ def main():
     if len(testList) == 0:
         sys.exit()
     
-    print('Using rethinkdb binay from %s' % build_directory)
+    print('Using rethinkdb binary from %s' % build_directory)
     startTime = time.time()
     
     failedTests = []
@@ -662,7 +662,7 @@ def main():
             
             if servers is None:
                 if options.cluster_port is not None:
-                    sys.stderr.write('Internal failure: we somehow lost track of the already running server!')
+                    sys.exit('Internal failure: we somehow lost track of the already running server!')
                 servers = test_util.RethinkDBTestServers(num_servers=1, server_build_dir=build_directory)
                 servers.start() # TODO: handle server fallovers
             
