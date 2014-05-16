@@ -2,7 +2,7 @@
 
 import os
 
-import exceptions
+import test_exceptions
 
 def module(module):
     __import__(module, level=0)
@@ -53,7 +53,7 @@ def latest_build_dir(check_executable=True):
                 canidatePath = path
     
     if canidatePath is None:
-        raise exceptions.NotBuiltException(detail='no version of this project have yet been built')
+        raise test_exceptions.NotBuiltException(detail='no version of this project have yet been built')
     
     else:
         return canidatePath
