@@ -16,5 +16,5 @@ class TestingFrameworkException(Exception):
         else:
             return self.message
 
-class NotBuiltException(Exception):
+class NotBuiltException(TestingFrameworkException):
     message = 'An item was not built'

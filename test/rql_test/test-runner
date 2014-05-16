@@ -520,19 +520,6 @@ def main():
         if options.shards != 1:
             parser.error('The -c/--cluster-port and -d/--driver-port options can not be used with -s/--shards')
     
-    # build_directory
-    
-    if options.build_directory is None:
-        try:
-            build_directory = utils.latest_build_dir()
-        except test_exceptions.TestingFrameworkException, e:
-            sys.exit()
-    else:
-        build_directory = options.build_directory
-    
-    if not os.path.isfile(os.path.join(build_directory, 'rethinkdb')):
-        sys.exit('Error: the slected build directory does not look valid: %s' % build_directory)
-    
     # - add filters
     
     for newFilter in args:
@@ -581,29 +568,18 @@ def main():
             print(test.name)
         return 0
     
-    # -- make sure the drivers are built
+    # -- check the build_directory
     
-    for language in options.languages:
-        if language == 'rb_server':
-            continue
-        
-        driverDir = None
-        if language == 'rb':
-            driverDir = os.path.join(utils.project_root_dir(), 'drivers', 'ruby')
-        elif language == 'js':
-            driverDir = os.path.join(utils.project_root_dir(), 'drivers', 'javascript')
-        elif language == 'py':
-            driverDir = os.path.join(utils.project_root_dir(), 'drivers', 'python')
-        else:
-            raise NotImplementedError('This tool does not know how to work with: %s' % language)
-        
-        outputFile = tempfile.NamedTemporaryFile()
-        makeProcess = subprocess.Popen(['make', '-C', driverDir], stdout=outputFile, stderr=subprocess.STDOUT)
-        if makeProcess.wait() != 0:
-            sys.stderr.write('Error making %s driver. Make output follows:\n\n' % os.path.basename(__file__))
-            outputFile.seek(0)
-            print(outputFile.read())
-            sys.exit(1)
+    if options.build_directory is None:
+        try:
+            build_directory = utils.latest_build_dir()
+        except test_exceptions.TestingFrameworkException, e:
+            sys.exit(str(e))
+    else:
+        build_directory = options.build_directory
+    
+    if not os.path.isfile(os.path.join(build_directory, 'rethinkdb')):
+        sys.exit('Error: the slected build directory does not look valid: %s' % build_directory)
     
     # -- set ENV settings for child processes
     
@@ -623,6 +599,32 @@ def main():
         os.environ['NODE_PATH'] = os.path.join(utils.project_root_dir(), 'build', 'drivers', 'javascript')
     
     os.environ['BUILD_DIR'] = build_directory
+    
+    # -- make sure the drivers are built
+    
+    for language in options.languages:
+        driverDir = None
+        if language == 'rb':
+            driverDir = os.path.join(utils.project_root_dir(), 'drivers', 'ruby')
+        elif language == 'js':
+            driverDir = os.path.join(utils.project_root_dir(), 'drivers', 'javascript')
+        elif language == 'py':
+            driverDir = os.path.join(utils.project_root_dir(), 'drivers', 'python')
+        else:
+            raise NotImplementedError('This tool does not know how to work with: %s' % language)
+        
+        outputFile = tempfile.NamedTemporaryFile()
+        notificationDeadline = time.time() + 2
+        makeProcess = subprocess.Popen(['make', '-C', driverDir], stdout=outputFile, stderr=subprocess.STDOUT)
+        while makeProcess.poll() is None and time.time() < notificationDeadline:
+            time.sleep(.1)
+        if time.time() > notificationDeadline:
+            print('Building the %s drivers. This make take a few moments.' % language)
+        if makeProcess.wait() != 0:
+            sys.stderr.write('Error making %s driver. Make output follows:\n\n' % os.path.basename(__file__))
+            outputFile.seek(0)
+            print(outputFile.read())
+            sys.exit(1)
     
     # -- run the testing
     
