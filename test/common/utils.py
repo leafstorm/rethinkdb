@@ -163,10 +163,10 @@ class performContinuousAction(threading.Thread):
 	daemon = True
 	stopSignal = False
 	
-	def __init__(self, host, port, action=None, autoStart=True, delay=.01, **kwargs):
+	def __init__(self, connection, action=None, autoStart=True, delay=.01, **kwargs):
 		super(performContinuousAction, self).__init__()
 		
-		self.connection = r.connect(host=host, port=port)
+		self.connection = connection
 		self.action = action
 		self.delay = delay
 		self.kwargs = kwargs
@@ -180,9 +180,7 @@ class performContinuousAction(threading.Thread):
 		self.action.run(self.connection)
 	
 	def run(self):
-		while True:
-			if self.stopSignal is True:
-				break
+		while self.stopSignal is False:
 			try:
 				self.runAction()
 				self.sucessCounter += 1
@@ -197,7 +195,9 @@ class performContinuousAction(threading.Thread):
 	
 	def stop(self):
 		self.stopSignal = True
-		self.join()
+		self.join(timeout=.5)
+		if self.isAlive():
+		  raise Warning('performContinuousAction failed to stop when asked to, results might not be trustable')
 	
 	def errorSummary(self):
 		if self.isAlive():
